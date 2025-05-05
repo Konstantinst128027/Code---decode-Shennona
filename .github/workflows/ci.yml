@@ -1,0 +1,32 @@
+name: (De)code Shennona
+
+on:
+  push:
+    branches: ["*"]
+  pull_request:
+    branches: ["*"]
+
+jobs:
+  build_and_test:
+    name: Сборка и тестирование
+    runs-on: ubuntu-latest
+
+    steps:
+      # 1. Установка зависимостей
+      - name: Установка инструментов
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            build-essential \
+            
+      # 2. Получение кода
+      - name: Получение кода
+        uses: actions/checkout@v4
+
+      # 3. Сборка u Tестирование encode Shennon
+      - name: Сборка и запуск encode
+        run: bash build_encode.sh
+
+      # 4. Сборка и запуск decode Shennon
+      - name: Сборка и запуск decode
+        run: bash build_decode.sh
