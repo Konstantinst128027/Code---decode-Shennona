@@ -1,3 +1,5 @@
+/* Berezkin Konstantin Evgenievich
+./main st128027@student.spbu.ru*/
 #ifndef FUNCTIONS_H
 #define FUNCTIONS_H
 

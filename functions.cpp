@@ -1,3 +1,5 @@
+/* Berezkin Konstantin Evgenievich
+./main st128027@student.spbu.ru*/
 #include "functions.h"
 
 // makes a vector consisting of a symbol and its probability

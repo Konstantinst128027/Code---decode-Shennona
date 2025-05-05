@@ -1,3 +1,5 @@
+/* Berezkin Konstantin Evgenievich
+./main st128027@student.spbu.ru*/
 #include "functions.h"
 
 int main(int argc, char* argv[]) {
