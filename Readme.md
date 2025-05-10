@@ -14,3 +14,6 @@
 
 ##Build decode and run decode
 - bash build_decode.sh
+
+##Build tests and run tests
+- bash build_tests.sh

@@ -12,6 +12,8 @@
 #include <sstream>
 #include <algorithm>
 #include <cmath>
+#include <random>
+#include <ctime>
 
 struct Symbol {
     char character;
@@ -30,4 +32,5 @@ void Check_Decode_Dict(std::unordered_map <std::string, char>& decode_dict);
 void Read_Encoded_File(std::string& infilename, std::string& text, std::unordered_map <std::string, char>& decode_dict);
 void Read_Text(std::string& text, std::string& infilename);
 
+std::string generate_100_char_string();
 #endif

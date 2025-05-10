@@ -30,3 +30,12 @@ jobs:
       # 4. Сборка и запуск decode Shennon
       - name: Сборка и запуск decode
         run: bash build_decode.sh
+      
+      # 5. Сборка и запуск tests
+      - name: Сборка и запуск tests
+        run: bash build_tests.sh
+      
+      # 6. make cleanall
+      - name: clean all
+        run: make cleanall
+

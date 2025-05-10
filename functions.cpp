@@ -66,12 +66,7 @@ std::string Encode_Text(std::string& text, std::unordered_map <char, std::string
 // Decode text
 std::string Decode_Text(std::string& text, std::unordered_map <std::string, char>& decode_dict)
 {
-    std::string decoded, current_code;
-    for (char c : text) {
-        if (c != '1' and c != '0') {
-            throw std::runtime_error("Encoded text is incorrected");
-        }
-    }
+    std::string decoded, current_code;    
     for (char bit : text) {
         current_code += bit;
         auto it = decode_dict.find(current_code);
@@ -79,6 +74,9 @@ std::string Decode_Text(std::string& text, std::unordered_map <std::string, char
             decoded += it->second; // tak kak it - iterator
             current_code.clear();
         }
+    }
+    if (!current_code.empty()) {
+        throw std::runtime_error("The decode_dict or text is incorrected");
     }
     return decoded;
 }
@@ -182,4 +180,16 @@ void Read_Text(std::string& text, std::string& infilename) {
     else {
         throw std::runtime_error(infilename + " is empty");
     }
+}
+//Generate string of 100 random char
+std::string generate_100_char_string() {
+    std::string result;
+    std::mt19937 gen(std::time(nullptr));
+    std::uniform_int_distribution<char> dist(32, 126);
+    
+    for (int i = 0; i < 100; ++i) {
+        result += dist(gen);
+    }
+    
+    return result;
 }
