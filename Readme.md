@@ -7,7 +7,7 @@
 - st128027@student.spbu.ru
 
 ##Description
-- I made a Shannon code/decode. When encoding, it reads from "infile.txt " the text encodes it. It writes the encoded text to "outfile.txt " and it also records a dictionary for decoding. When decoding, it reads the first line of the encoded text from the file first and then reads the dictionary for decoding. After the decoding process, writes the decoded text back to "infile.txt ".
+- I made a Shannon encoder/decoder. First, he reads the text from "infile.txt" after the text has been encoded, I send the encoded text to "outfile.txt" and I write the text in "outfile.bin". When decoding, I read the text from outfile.txt and I'm reading the dictionary from the "outfile.bin", the encoded string is decoded and then I put it in "infile.txt". How do I write down a dictionary? First I write down its size, then I start writing down the dictionary itself. First, I write the character as a single byte, then I write down the length of the line of code, and then the code itself, which I first supplement to a multiple of 8, so that it is convenient to write it and so that there is less memory. I'm adding zeros from the right, as it will make it easier to trim this line when reading.
 
 ##Build encode and run encode
 - bash build_encode.sh

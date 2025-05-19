@@ -2,6 +2,29 @@
 ./main st128027@student.spbu.ru*/
 #include "functions.h"
 
+// Read text from file in std::string text
+void Read_Text(std::string& text, std::string& infilename) {
+    std::ifstream infile(infilename);
+    if (!infile) {
+        throw std::runtime_error("Couldn`t open the file");
+    }
+    
+    std::stringstream buffer;
+    buffer << infile.rdbuf(); // Read all file in stringstream
+    text = buffer.str();    // convert to std::string
+    
+    size_t last_valid_pos = text.find_last_not_of("\n");
+    
+    // Deleted the last "\n"
+    if (last_valid_pos != std::string::npos) {
+        text.erase(last_valid_pos + 1);
+    } 
+    // if file is empty - error
+    else {
+        throw std::runtime_error(infilename + " is empty");
+    }
+}
+
 // makes a vector consisting of a symbol and its probability
 std::vector<Symbol> Calculate_Frequencies(std::string& text) {
     std::map<char, int> freqMap;
@@ -81,106 +104,130 @@ std::string Decode_Text(std::string& text, std::unordered_map <std::string, char
     return decoded;
 }
 
-// Check decode_dict from outfile
-void Check_Decode_Dict(std::unordered_map <std::string, char>& decode_dict) {
-    for (auto [code, symbol]: decode_dict) {
-        for (char c: code) {
-            if (c != '0' and c != '1') {
-                throw std::runtime_error("The decode_dict is incorrected");
-            }
-        }
-    }
-}
-
 // Save decode_dict and encoded text in outfile
-void Save_Dictionary_And_Encoded(std::string& outfilename, std::string& encoded, std::unordered_map <std::string, char>& decode_dict) {
-    std::ofstream outfile(outfilename);
+void Save_Dictionary_And_Encoded(std::string& outfilename, std::unordered_map<std::string, char>& decode_dict, std::string& encoded) {
+    std::ofstream outfile(outfilename, std::ios::binary);
     if (!outfile) {
-        throw std::runtime_error("Couldn`t open the file");
+        throw std::runtime_error("Couldn't open the file " + outfilename);
     }
     
-    outfile << encoded << "\n";
+    // 1. Write encode_lenght and encoded itself
+    uint16_t encoded_size = encoded.size();
+    outfile.write(reinterpret_cast<char*>(&encoded_size), sizeof(encoded_size));
+
+    while (encoded.size() % 8 != 0) {
+        encoded += '0';
+    }
     
+    for (size_t i = 0; i < encoded.size(); i += 8) {
+        std::bitset<8> byte(encoded.substr(i, 8)); // substr - reduces the string to 8 characters, bitset converts the string to a string of bytes and adds "0" to the beginning
+        outfile.put(static_cast<char>(byte.to_ulong())); // to_ulong convert byte line in number, i am doing this because type is bitset
+    }
+    
+    // 2. Write decode_dict size and decode_dict itself
+    uint16_t dict_size = decode_dict.size();
+    outfile.write(reinterpret_cast<char*>(&dict_size), sizeof(dict_size));
+
     for (auto [code, symbol] : decode_dict) {
-        if (symbol == '\n') {
-            outfile << code << " " << "\\n" << "\n";
+        outfile.put(symbol);
+
+        uint8_t code_length = code.size();
+        outfile.put(code_length); // i am not converting in char, because 8 bits is one character and type is uint8_t
+
+        std::string padded_code = code;
+        while (padded_code.size() % 8 != 0) { // so that there are full bytes, on the left as it will be easier to read
+            padded_code += '0';
         }
-        else if (symbol == '\t') {
-            outfile << code << " " << "\\t" << "\n";
-        }
-        else if (symbol == ' ') {
-            outfile << code << " " << "\\s" << "\n";
-        }
-        else {
-            outfile << code << " " << symbol << "\n";
+
+        for (size_t i = 0; i < padded_code.size(); i += 8) {
+            std::bitset<8> byte(padded_code.substr(i, 8)); // substr - reduces the string to 8 characters, bitset converts the string to a string of bytes and adds "0" to the beginning
+            outfile.put(static_cast<char>(byte.to_ulong())); // to_ulong convert byte line in number, i am doing this because type is bitset
         }
     }
 }
 
-// Read text and decode_dict
-void Read_Encoded_File(std::string& infilename, std::string& text, std::unordered_map <std::string, char>& decode_dict) {
+// Read encode and decode_dict
+void Read_Encoded_And_Dict(std::string& encoded, std::string& outfilename, std::unordered_map <std::string, char>& decode_dict) {
     
-    std::ifstream infile(infilename);
-    if (!infile) {
-        throw std::runtime_error("Couldn`t open the file");
+    std::ifstream outfile(outfilename, std::ios::binary);
+    
+    if (!outfile) {
+        throw std::runtime_error("Couldn`t open the file" + outfilename);
     }
     
-    std::getline(infile, text);
+    // 1. read size encoded and encoded itself
+    uint16_t encoded_size;
+    outfile.read(reinterpret_cast<char*>(&encoded_size), sizeof(encoded_size)); // because type is uint16_t
+    
+    if (outfile.fail()) { // fail checks whether the last input operation ended with an error
+            throw std::runtime_error("Failed to read encoded_size");
+    }
+    
+    size_t byte_count_encoded = (encoded_size + 7) / 8; // +7 since there are 8 bits in a byte
+    
+    for (size_t j = 0; j < byte_count_encoded; ++j) {
+            
+        uint8_t byte = outfile.get();
+            
+        if (outfile.fail()) { // fail checks whether the last input operation ended with an error
+            throw std::runtime_error("Failed to read byte");
+        }
+            
+        encoded += std::bitset<8>(byte).to_string(); // to_string converted bits line in string
+    }
 
-    std::string line;
-    while (std::getline(infile, line)) {
+    encoded = encoded.substr(0, encoded_size); // cut encoded to encoded_size symbols
 
-        if (line.find_first_not_of(" \t") == std::string::npos) {
-            continue;
+    // checking for dictionary correctness
+    for (char character : encoded) {
+        if (character != '0' and character != '1') {
+            throw std::runtime_error("Encoded_text is incorrected");
+        }
+    }
+    
+    // 2. read size dict and dict itself
+    uint16_t dict_size;
+    outfile.read(reinterpret_cast<char*>(&dict_size), sizeof(dict_size)); // because type is uint16_t
+    
+    if (outfile.fail()) { // fail checks whether the last input operation ended with an error
+            throw std::runtime_error("Failed to read dict_size");
+    }
+     
+    for (uint16_t i = 0; i < dict_size; ++i) { 
+
+        char symbol = outfile.get();
+        
+        if (outfile.fail()) { // fail checks whether the last input operation ended with an error
+            throw std::runtime_error("Failed to read symbol");
+        }
+        
+        uint8_t code_length = outfile.get();
+    
+        if (outfile.fail()) { // fail checks whether the last input operation ended with an error
+            throw std::runtime_error("Failed to read code_length");
         }
 
-        std::istringstream iss(line);
-        std::string symbol_part, code;
+        size_t byte_count_code = (code_length + 7) / 8; // +7 since there are 8 bits in a byte
+        
+        std::string code;
 
-        if (!(iss >> code >> symbol_part)) {
-            throw std::runtime_error("incorrect format - (expect '<symbol> <code>')");
+        for (size_t j = 0; j < byte_count_code; ++j) {
+            
+            uint8_t byte = outfile.get();
+            
+            if (outfile.fail()) { // fail checks whether the last input operation ended with an error
+                throw std::runtime_error("Failed to read byte");
+            }
+            
+            code += std::bitset<8>(byte).to_string(); // to_string converted bits line in string
         }
 
-        char symbol;
-        if (symbol_part == "\\s") {
-            symbol = ' ';
-        } else if (symbol_part == "\\t") {
-            symbol = '\t';
-        } else if (symbol_part == "\\n") {
-            symbol = '\n';
-        } else if (symbol_part.size() != 1) {
-            throw std::runtime_error("incorrect symbol " + symbol_part + " (must be 1 symbol or \\s, \\t, \\n)");
-        } else {
-            symbol = symbol_part[0];
-        }
+        code = code.substr(0, code_length); // cut code_bits to code_length symbols
 
         decode_dict[code] = symbol;
-    }
-    
-    Check_Decode_Dict(decode_dict);
+    }    
 }
-// Read text from file in std::string text
-void Read_Text(std::string& text, std::string& infilename) {
-    std::ifstream infile(infilename);
-    if (!infile) {
-        throw std::runtime_error("Couldn`t open the file");
-    }
-    
-    std::stringstream buffer;
-    buffer << infile.rdbuf(); // Read all file in stringstream
-    text = buffer.str();    // convert to std::string
-    
-    size_t last_valid_pos = text.find_last_not_of("\n");
-    
-    // Deleted the last "\n"
-    if (last_valid_pos != std::string::npos) {
-        text.erase(last_valid_pos + 1);
-    } 
-    // if file is empty - error
-    else {
-        throw std::runtime_error(infilename + " is empty");
-    }
-}
+
 //Generate string of 100 random char
 std::string generate_100_char_string() {
     std::string result;

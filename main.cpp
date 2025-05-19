@@ -16,24 +16,31 @@ int main(int argc, char* argv[]) {
     }
     try {
         if (decode_mode) {
-            // Режим декодирования
-            std::string infile = "outfile.txt";
-            std::string text;
-            std::unordered_map <std::string, char> decode_dict;
-            Read_Encoded_File(infile, text, decode_dict);
-            std::string decoded = Decode_Text(text, decode_dict);
-            std::string outfilename = "infile.txt";
+        
+            // Decoding mode
+            std::string outfilename = "outfile.bin";
+            std::unordered_map <std::string, char> decode_dict;            
+            std::string encoded;
             
-            std::ofstream outfile(outfilename);
-            if (!outfile) {
+            Read_Encoded_And_Dict(encoded, outfilename, decode_dict);
+            
+            std::string decoded = Decode_Text(encoded, decode_dict);
+            
+            std::string infilename = "infile.txt";
+            
+            std::ofstream infile(infilename);
+            
+            if (!infile) {
                 throw std::runtime_error("Couldn`t open the file");
             }
-            outfile << decoded << "\n";
+            infile << decoded;
             
         } else {
-            // Режим кодирования
+        
+            // Coding mode
             std::string infilename = "infile.txt";
             std::string text;
+            
             Read_Text(text, infilename);
             
             std::unordered_map <std::string, char> decode_dict;
@@ -41,10 +48,11 @@ int main(int argc, char* argv[]) {
             
             std::vector <Symbol> symbols = Calculate_Frequencies(text);
             Build_ShannonCodes(symbols, decode_dict, code_dict);
+            
             std::string encoded = Encode_Text(text, code_dict);
             
-            std::string outfile = "outfile.txt";
-            Save_Dictionary_And_Encoded(outfile, encoded, decode_dict);
+            std::string outfile = "outfile.bin";
+            Save_Dictionary_And_Encoded(outfile, decode_dict, encoded);
         }
     } catch (std::exception& e) {
         std::cerr << "Error: " << e.what() << std::endl;

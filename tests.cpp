@@ -121,3 +121,35 @@ TEST(Encoding_Decoding_Test, Random_Test) {
     EXPECT_EQ(decoded, text);
 }
 
+// tests for Read and Save
+TEST(Save_Read_Test, Test) {
+
+    std::string infilename = "infile.txt";
+    std::string text;
+                
+    Read_Text(text, infilename);
+            
+    std::unordered_map <std::string, char> decode_dict;
+    std::unordered_map <char, std::string> code_dict;
+            
+    std::vector <Symbol> symbols = Calculate_Frequencies(text);
+    Build_ShannonCodes(symbols, decode_dict, code_dict);
+            
+    std::string encoded = Encode_Text(text, code_dict);
+            
+    std::string outfile = "outfile.bin";
+    Save_Dictionary_And_Encoded(outfile, decode_dict, encoded);
+    
+    std::unordered_map <std::string, char> decode_dict_then;            
+    std::string encoded_then;
+            
+    Read_Encoded_And_Dict(encoded_then, outfile, decode_dict_then);
+            
+    std::string decoded = Decode_Text(encoded_then, decode_dict_then); 
+            
+    std::ofstream infile(infilename);    
+    infile << decoded;
+    
+    EXPECT_EQ(decoded, text);
+}
+

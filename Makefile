@@ -14,4 +14,4 @@ $(EXECUTABLE_2): functions.o tests.o
 clean:
 	rm -f *.o
 cleanall:
-	rm -f *.o $(EXECUTABLE_1) $(EXECUTABLE_2)
+	rm -f *.o $(EXECUTABLE_1) $(EXECUTABLE_2) outfile.bin
